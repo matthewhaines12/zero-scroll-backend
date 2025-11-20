@@ -1,5 +1,4 @@
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+import nodemailer from "nodemailer";
 
 const EMAIL_HOST = process.env.EMAIL_HOST;
 const EMAIL_PORT = process.env.EMAIL_PORT;
@@ -34,4 +33,4 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 };
 
-module.exports = sendEmail;
+export default sendEmail;

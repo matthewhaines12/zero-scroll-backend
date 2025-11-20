@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const sessionSchema = new mongoose.Schema(
   {
@@ -15,10 +15,10 @@ const sessionSchema = new mongoose.Schema(
     completed: { type: Boolean, default: false },
     startTime: { type: Date, required: true },
     endTime: { type: Date },
-    duration: { type: Number }, // start time - end time
+    duration: { type: Number, default: 0 }, // start time - end time
   },
   {
     timestamps: true,
   }
 );
-module.exports = mongoose.model("Session", sessionSchema);
+export default mongoose.model("Session", sessionSchema);

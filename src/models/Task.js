@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
   {
@@ -8,7 +8,7 @@ const taskSchema = new mongoose.Schema(
       required: true,
     }, // Task belongs to which user
     title: { type: String, required: true },
-    estimatedTime: { type: String },
+    estimatedTime: { type: Number },
     category: { type: String }, // deep work or shallow work
     tags: [String], // i.e., coding, studying, etc - for sorting
     completed: { type: Boolean, default: false },
@@ -17,4 +17,4 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-module.exports = mongoose.model("Task", taskSchema);
+export default mongoose.model("Task", taskSchema);

@@ -1,5 +1,5 @@
 // Protect private routes - only accessible by authenticated users
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
@@ -21,4 +21,4 @@ const verifyAccessToken = (req, res, next) => {
   });
 };
 
-module.exports = verifyAccessToken;
+export default verifyAccessToken;

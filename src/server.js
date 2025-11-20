@@ -1,12 +1,13 @@
-const express = require("express");
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import connectDB from "./config/db.js";
+import authRoute from "./routes/authRoute.js";
+import taskRoute from "./routes/taskRoute.js";
+import sessionRoute from "./routes/sessionRoute.js";
+import dotenv from "dotenv";
+dotenv.config();
 const app = express();
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const connectDB = require("./config/db");
-const authRouter = require("./routes/auth");
-const usersRouter = require("./routes/users");
-const sessiosnRouter = require("./routes/sessions");
-require("dotenv").config(); // Add this line
 
 const PORT = 3001;
 
@@ -20,9 +21,9 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.use("/api/auth", authRouter);
-app.use("/api/users", usersRouter);
-app.use("/api/sessions", sessiosnRouter);
+app.use("/api/auth", authRoute);
+app.use("/api/task", taskRoute);
+app.use("/api/session", sessionRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

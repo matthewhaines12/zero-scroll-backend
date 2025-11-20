@@ -1,10 +1,7 @@
-const express = require("express");
-const User = require("../models/User");
-const router = express.Router();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const sendEmail = require("../utils/sendEmail");
-const verifyAccessToken = require("../middleware/verifyAccessToken");
+import User from "../models/User.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import sendEmail from "../utils/sendEmail.js";
 
 const CLIENT_URL = process.env.CLIENT_URL;
 const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -21,7 +18,7 @@ const isValidPassword = (password) => {
   return true;
 };
 
-router.post("/signup", async (req, res) => {
+export const signup = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -30,8 +27,6 @@ router.post("/signup", async (req, res) => {
         .status(400)
         .json({ error: "Please provide an email and password" });
     }
-
-    // Email format validation
 
     if (!isValidPassword(password)) {
       return res.status(400).json({
@@ -46,23 +41,24 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "Email id already registerd" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 11); // hash password
+    const hashedPassword = await bcrypt.hash(password, 11);
 
     const newUser = await User.create({
       email,
       password: hashedPassword,
     });
 
-    // Generate email JWT for verification:
     const emailToken = jwt.sign({ userID: newUser._id }, JWT_EMAIL_SECRET, {
       expiresIn: "10m",
     });
+
     const verifyURL = `${CLIENT_URL}/verify-email?token=${emailToken}`;
+
     await sendEmail({
       to: newUser.email,
       subject: "Verify your Zero Scroll account",
       html: `<p>Please click the link below to verify your email:</p>
-           <a href="${verifyURL}">${verifyURL}</a>`,
+             <a href="${verifyURL}">${verifyURL}</a>`,
     });
 
     res.status(200).json({
@@ -73,9 +69,9 @@ router.post("/signup", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.post("/login", async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -103,10 +99,10 @@ router.post("/login", async (req, res) => {
         .json({ error: "Please verify your email before logging in" });
     }
 
-    // Generate JWT's
     const accessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
       expiresIn: "15m",
     });
+
     const refreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
       expiresIn: "30d",
     });
@@ -114,12 +110,11 @@ router.post("/login", async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
 
-    // Refresh token stored in HTTP only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
       sameSite: "Lax",
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+      maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
     res.status(200).json({ message: "Successful login", userObj, accessToken });
@@ -127,9 +122,9 @@ router.post("/login", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.post("/logout", (req, res) => {
+export const logout = (req, res) => {
   try {
     res.clearCookie("refreshToken", {
       httpOnly: true,
@@ -141,9 +136,9 @@ router.post("/logout", (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.get("/verify-email", async (req, res) => {
+export const verifyEmail = async (req, res) => {
   try {
     const emailToken = req.query.token;
     if (!emailToken) {
@@ -164,7 +159,7 @@ router.get("/verify-email", async (req, res) => {
     const user = await User.findByIdAndUpdate(
       decoded.userID,
       { verified: true },
-      { new: true } // returns updated User
+      { new: true }
     );
 
     if (!user) {
@@ -176,9 +171,9 @@ router.get("/verify-email", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.post("/resend-verification", async (req, res) => {
+export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -201,24 +196,24 @@ router.post("/resend-verification", async (req, res) => {
     const emailToken = jwt.sign({ userID: user._id }, JWT_EMAIL_SECRET, {
       expiresIn: "10m",
     });
+
     const verifyURL = `${CLIENT_URL}/verify-email?token=${emailToken}`;
+
     await sendEmail({
       to: user.email,
       subject: "Verify your Zero Scroll account",
       html: `<p>Please click the link below to verify your email:</p>
-            <a href="${verifyURL}">${verifyURL}</a>`,
+             <a href="${verifyURL}">${verifyURL}</a>`,
     });
 
-    res.status(200).json({
-      message: "Verification email resent",
-    });
+    res.status(200).json({ message: "Verification email resent" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.post("/refresh", async (req, res) => {
+export const refresh = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
@@ -247,24 +242,22 @@ router.post("/refresh", async (req, res) => {
         secure: false,
         sameSite: "Lax",
       });
-      return res.status(403).json({
-        error: "Email verification required",
-      });
+      return res.status(403).json({ error: "Email verification required" });
     }
 
     const newAccessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
       expiresIn: "15m",
     });
+
     const newRefreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
       expiresIn: "30d",
     });
 
-    // Refresh token stored in HTTP only cookie
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: false,
       sameSite: "Lax",
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+      maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
     res.status(200).json({ message: "Tokens refreshed", user, newAccessToken });
@@ -272,10 +265,9 @@ router.post("/refresh", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-// forgot password
-router.post("/forgot-password", async (req, res) => {
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -302,20 +294,19 @@ router.post("/forgot-password", async (req, res) => {
       to: user.email,
       subject: "Reset your Scroll Zero password",
       html: `<p>Please click the link below to reset your password:</p>
-           <a href="${resetURL}">${resetURL}</a>`,
+             <a href="${resetURL}">${resetURL}</a>`,
     });
 
-    res
-      .status(200)
-      .json({ message: "If that email is registerd, you'll receive an email" });
+    res.status(200).json({
+      message: "If that email is registerd, you'll receive an email",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-// reset password
-router.post("/reset-password", async (req, res) => {
+export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
@@ -339,12 +330,12 @@ router.post("/reset-password", async (req, res) => {
       return res.status(401).json({ error: "Invalid or expired reset token" });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 11); // hash password
+    const hashedPassword = await bcrypt.hash(newPassword, 11);
 
     const user = await User.findByIdAndUpdate(
       decoded.userID,
       { password: hashedPassword },
-      { new: true } // returns updated User
+      { new: true }
     );
 
     if (!user) {
@@ -356,14 +347,11 @@ router.post("/reset-password", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-// Middleare for all protected routes below - ensure user is authenticated
-router.use(verifyAccessToken);
-
-router.post("/change-password", async (req, res) => {
+export const changePassword = async (req, res) => {
   try {
-    const userID = req.userID; // Via verify middleware
+    const userID = req.userID;
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findById(userID).select("+password");
@@ -385,7 +373,7 @@ router.post("/change-password", async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 11); // hash password
+    const hashedPassword = await bcrypt.hash(newPassword, 11);
 
     await User.findByIdAndUpdate(
       userID,
@@ -404,11 +392,11 @@ router.post("/change-password", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
+};
 
-router.post("/delete-account", async (req, res) => {
+export const deleteAccount = async (req, res) => {
   try {
-    const userID = req.userID; // Via verify middleware
+    const userID = req.userID;
     const user = await User.findByIdAndDelete(userID);
 
     if (!user) {
@@ -426,6 +414,4 @@ router.post("/delete-account", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-});
-
-module.exports = router;
+};
