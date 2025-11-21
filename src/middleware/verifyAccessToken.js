@@ -1,10 +1,11 @@
 // Protect private routes - only accessible by authenticated users
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
-const verifyAccessToken = (req, res, next) => {
-  authHeader = req.headers.authorization;
+const verifyAccessToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
   if (!authHeader)
     return res.status(401).json({ error: "Access token missing" });
 
@@ -13,12 +14,25 @@ const verifyAccessToken = (req, res, next) => {
   if (!accessToken)
     return res.status(401).json({ error: "Access token missing" });
 
-  jwt.verify(accessToken, JWT_ACCESS_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Inalid access token" });
+  let decoded;
+  try {
+    decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
+  } catch (err) {
+    return res.status(403).json({ error: "Invalid access token" });
+  }
 
-    req.userID = decoded.userID;
+  try {
+    const user = await User.findById(decoded.userID);
+
+    if (!user) {
+      return res.status(404).json({ error: "User doesn't exist" });
+    }
+
+    req.userID = user._id;
     next();
-  });
+  } catch (err) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export default verifyAccessToken;

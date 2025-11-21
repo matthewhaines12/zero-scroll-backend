@@ -6,15 +6,16 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }, // Task belongs to which user
+    },
     title: { type: String, required: true },
-    estimatedTime: { type: Number },
+    description: { type: String },
+    scheduledFor: { type: Date },
     category: { type: String }, // deep work or shallow work
-    tags: [String], // i.e., coding, studying, etc - for sorting
+    tags: [String],
     completed: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
 export default mongoose.model("Task", taskSchema);

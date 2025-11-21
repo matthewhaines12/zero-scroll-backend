@@ -43,12 +43,12 @@ export const signup = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 11);
 
-    const newUser = await User.create({
+    const user = await User.create({
       email,
       password: hashedPassword,
     });
 
-    const emailToken = jwt.sign({ userID: newUser._id }, JWT_EMAIL_SECRET, {
+    const emailToken = jwt.sign({ userID: user._id }, JWT_EMAIL_SECRET, {
       expiresIn: "10m",
     });
 
@@ -246,7 +246,7 @@ export const refresh = async (req, res) => {
     }
 
     const newAccessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: "15m",
+      expiresIn: "59m",
     });
 
     const newRefreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
@@ -356,10 +356,6 @@ export const changePassword = async (req, res) => {
 
     const user = await User.findById(userID).select("+password");
 
-    if (!user) {
-      return res.status(404).json({ error: "User doesn't exist" });
-    }
-
     const isMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!isMatch) {
@@ -397,11 +393,7 @@ export const changePassword = async (req, res) => {
 export const deleteAccount = async (req, res) => {
   try {
     const userID = req.userID;
-    const user = await User.findByIdAndDelete(userID);
-
-    if (!user) {
-      return res.status(404).json({ error: "User doesn't exist" });
-    }
+    await User.findByIdAndDelete(userID);
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
