@@ -61,7 +61,7 @@ export const signup = async (req, res) => {
              <a href="${verifyURL}">${verifyURL}</a>`,
     });
 
-    res.status(200).json({
+    res.status(201).json({
       message:
         "New user created successfully, please verify your email to login",
     });
@@ -100,7 +100,7 @@ export const login = async (req, res) => {
     }
 
     const accessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: "15m",
+      expiresIn: "59m", // for testing
     });
 
     const refreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
@@ -246,7 +246,7 @@ export const refresh = async (req, res) => {
     }
 
     const newAccessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: "59m",
+      expiresIn: "59m", // for testing
     });
 
     const newRefreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {

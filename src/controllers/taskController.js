@@ -18,7 +18,7 @@ export const createTask = async (req, res) => {
       tags: data.tags || [],
     });
 
-    res.status(200).json({ message: "New task created successfully", task });
+    res.status(201).json({ message: "New task created successfully", task });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -43,13 +43,14 @@ export const getTasks = async (req, res) => {
 
 export const getTask = async (req, res) => {
   try {
+    const userID = req.userID;
     const taskID = req.params.id;
 
     if (!taskID) {
       return res.status(404).json({ error: "Missing taskID" });
     }
 
-    const task = await Task.findById(taskID);
+    const task = await Task.findOne({ _id: taskID, userID });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
@@ -64,6 +65,7 @@ export const getTask = async (req, res) => {
 
 export const updateTask = async (req, res) => {
   try {
+    const userID = req.userID;
     const taskID = req.params.id;
     const updates = req.body;
 
@@ -71,9 +73,13 @@ export const updateTask = async (req, res) => {
       return res.status(404).json({ error: "Missing taskID" });
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(taskID, updates, {
-      new: true,
-    });
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: taskID, userID },
+      updates,
+      {
+        new: true,
+      }
+    );
 
     if (!updatedTask) {
       return res.status(404).json({ message: "Task not found" });
@@ -90,13 +96,14 @@ export const updateTask = async (req, res) => {
 
 export const deleteTask = async (req, res) => {
   try {
+    const userID = req.userID;
     const taskID = req.params.id;
 
     if (!taskID) {
       return res.status(404).json({ error: "Missing taskID" });
     }
 
-    const deletedTask = await Task.findByIdAndDelete(taskID);
+    const deletedTask = await Task.findOneAndDelete({ _id: taskID, userID });
 
     if (!deletedTask) {
       return res.status(404).json({ error: "Task not found" });
