@@ -1,10 +1,12 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
+    username: { type: String, required: true },
     email: { type: String, unique: true, required: true, trim: true },
     password: { type: String, required: true, select: false },
     verified: { type: Boolean, default: false },
+    lastLogin: { type: Date, default: Date.now },
     timerSettings: {
       focusMinutes: { type: Number, default: 50 },
       breakMinutes: { type: Number, default: 10 },
@@ -17,4 +19,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model('User', userSchema);

@@ -1,15 +1,15 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const sessionSchema = new mongoose.Schema(
   {
     userID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     taskID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
+      ref: 'Task',
       required: true,
     },
     completed: { type: Boolean, default: false },
@@ -20,4 +20,4 @@ const sessionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Session", sessionSchema);
+export default mongoose.model('Session', sessionSchema);

@@ -1,5 +1,5 @@
-import Session from "../models/Session.js";
-import Task from "../models/Task.js";
+import Session from '../models/Session.js';
+import Task from '../models/Task.js';
 
 export const startSession = async (req, res) => {
   try {
@@ -7,13 +7,13 @@ export const startSession = async (req, res) => {
     const { taskID } = req.body;
 
     if (!taskID) {
-      return res.status(404).json({ error: "taskID required" });
+      return res.status(404).json({ error: 'taskID required' });
     }
 
     const task = await Task.findOne({ _id: taskID, userID });
 
     if (!task) {
-      return res.status(404).json({ error: "Task not found" });
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     // check for active sessions
@@ -23,10 +23,10 @@ export const startSession = async (req, res) => {
       startTime: Date.now(),
     });
 
-    res.status(201).json({ message: "Session started", session });
+    res.status(201).json({ message: 'Session started', session });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -36,14 +36,14 @@ export const getSessions = async (req, res) => {
 
     const sessions = await Session.find({ userID })
       .sort({ startTime: -1 })
-      .populate("taskID", "title category");
+      .populate('taskID', 'title category');
 
     res
       .status(200)
-      .json({ message: "Sessions returned successfully", sessions });
+      .json({ message: 'Sessions returned successfully', sessions });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -53,17 +53,17 @@ export const stopSession = async (req, res) => {
     const sessionID = req.params.id;
 
     if (!sessionID) {
-      return res.status(404).json({ error: "Missing sessionID" });
+      return res.status(404).json({ error: 'Missing sessionID' });
     }
 
     const session = await Session.findOne({ _id: sessionID, userID });
 
     if (!session) {
-      return res.status(404).json({ message: "Session not found" });
+      return res.status(404).json({ message: 'Session not found' });
     }
 
     if (session.completed) {
-      return res.status(400).json({ message: "Session already completed" });
+      return res.status(400).json({ message: 'Session already completed' });
     }
 
     session.completed = true;
@@ -74,10 +74,10 @@ export const stopSession = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "Session completed successfully", session });
+      .json({ message: 'Session completed successfully', session });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -87,19 +87,19 @@ export const getSession = async (req, res) => {
     const sessionID = req.params.id;
 
     if (!sessionID) {
-      return res.status(404).json({ error: "sessionID required" });
+      return res.status(404).json({ error: 'sessionID required' });
     }
 
     const session = await Session.findOne({ _id: sessionID, userID });
 
     if (!session) {
-      return res.status(404).json({ error: "Session not found" });
+      return res.status(404).json({ error: 'Session not found' });
     }
 
-    res.status(200).json({ message: "Session returned successfully", session });
+    res.status(200).json({ message: 'Session returned successfully', session });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -109,19 +109,19 @@ export const deleteSession = async (req, res) => {
     const sessionID = req.params.id;
 
     if (!sessionID) {
-      return res.status(404).json({ error: "sessionID required" });
+      return res.status(404).json({ error: 'sessionID required' });
     }
 
     const session = await Session.findOneAndDelete({ _id: sessionID, userID });
 
     if (!session) {
-      return res.status(404).json({ error: "Session not found" });
+      return res.status(404).json({ error: 'Session not found' });
     }
 
-    res.status(200).json({ message: "Session deleted successfully" });
+    res.status(200).json({ message: 'Session deleted successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -148,7 +148,7 @@ export const getTodaysSessions = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -158,13 +158,13 @@ export const getSessionsForTasks = async (req, res) => {
     const taskID = req.params.id;
 
     if (!taskID) {
-      return res.status(404).json({ error: "taskID required" });
+      return res.status(404).json({ error: 'taskID required' });
     }
 
     const task = await Task.findOne({ _id: taskID, userID });
 
     if (!task) {
-      return res.status(404).json({ error: "Task not found" });
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     const sessionsForTask = await Session.find({
@@ -173,11 +173,11 @@ export const getSessionsForTasks = async (req, res) => {
     }).sort({ startTime: -1 });
 
     res.status(200).json({
-      message: "Sessions for task returned successfully",
+      message: 'Sessions for task returned successfully',
       sessionsForTask,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };

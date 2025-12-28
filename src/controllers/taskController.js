@@ -1,4 +1,4 @@
-import Task from "../models/Task.js";
+import Task from '../models/Task.js';
 
 export const createTask = async (req, res) => {
   try {
@@ -6,22 +6,22 @@ export const createTask = async (req, res) => {
     const data = req.body; // May want to whitelist certain fields later
 
     if (!data.title) {
-      return res.status(400).json({ error: "Task title is required" });
+      return res.status(400).json({ error: 'Task title is required' });
     }
 
     const task = await Task.create({
       userID,
       title: data.title,
-      description: data.description || "",
+      description: data.description || '',
       scheduledFor: data.scheduledFor || null,
       category: data.category || null,
       tags: data.tags || [],
     });
 
-    res.status(201).json({ message: "New task created successfully", task });
+    res.status(201).json({ message: 'New task created successfully', task });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -34,10 +34,10 @@ export const getTasks = async (req, res) => {
       createdAt: -1,
     });
 
-    res.status(200).json({ message: "Tasks returned successfully", tasks });
+    res.status(200).json({ message: 'Tasks returned successfully', tasks });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -47,19 +47,19 @@ export const getTask = async (req, res) => {
     const taskID = req.params.id;
 
     if (!taskID) {
-      return res.status(404).json({ error: "Missing taskID" });
+      return res.status(404).json({ error: 'Missing taskID' });
     }
 
     const task = await Task.findOne({ _id: taskID, userID });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    res.status(200).json({ message: "Task returned successfully", task });
+    res.status(200).json({ message: 'Task returned successfully', task });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -70,7 +70,7 @@ export const updateTask = async (req, res) => {
     const updates = req.body;
 
     if (!taskID) {
-      return res.status(404).json({ error: "Missing taskID" });
+      return res.status(404).json({ error: 'Missing taskID' });
     }
 
     const updatedTask = await Task.findOneAndUpdate(
@@ -82,15 +82,15 @@ export const updateTask = async (req, res) => {
     );
 
     if (!updatedTask) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({ message: 'Task not found' });
     }
 
     res
       .status(200)
-      .json({ message: "Task updated successfully", task: updatedTask });
+      .json({ message: 'Task updated successfully', task: updatedTask });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -100,19 +100,19 @@ export const deleteTask = async (req, res) => {
     const taskID = req.params.id;
 
     if (!taskID) {
-      return res.status(404).json({ error: "Missing taskID" });
+      return res.status(404).json({ error: 'Missing taskID' });
     }
 
     const deletedTask = await Task.findOneAndDelete({ _id: taskID, userID });
 
     if (!deletedTask) {
-      return res.status(404).json({ error: "Task not found" });
+      return res.status(404).json({ error: 'Task not found' });
     }
 
-    res.status(200).json({ message: "Task successfully deleted", deletedTask });
+    res.status(200).json({ message: 'Task successfully deleted', deletedTask });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -138,6 +138,6 @@ export const getTodaysTasks = async (req, res) => {
       .json({ message: "Today's tasks returned successfully", todaysTasks });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 };

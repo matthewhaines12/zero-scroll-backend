@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema(
   {
     userID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     title: { type: String, required: true },
@@ -18,4 +18,4 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Task", taskSchema);
+export default mongoose.model('Task', taskSchema);
