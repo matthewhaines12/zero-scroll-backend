@@ -8,10 +8,11 @@ const taskSchema = new mongoose.Schema(
       required: true,
     },
     title: { type: String, required: true },
-    description: { type: String },
-    scheduledFor: { type: Date },
-    category: { type: String }, // deep work or shallow work
-    tags: [String],
+    // description: { type: String },
+    // scheduledFor: { type: Date },
+    // category: { type: String }, // deep work or shallow work
+    // tags: [String],
+    priority: { type: String, default: 'MED', required: true },
     completed: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
   },

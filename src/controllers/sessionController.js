@@ -4,23 +4,25 @@ import Task from '../models/Task.js';
 export const startSession = async (req, res) => {
   try {
     const userID = req.userID;
-    const { taskID } = req.body;
+    const { sessionType, plannedDuration } = req.body;
 
-    if (!taskID) {
-      return res.status(404).json({ error: 'taskID required' });
+    if (!sessionType || !plannedDuration) {
+      return res.status(400).json({ error: 'Session type required' });
     }
 
-    const task = await Task.findOne({ _id: taskID, userID });
+    const validSessionTypes = ['FOCUS', 'BREAK', 'RECOVER'];
 
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+    if (!validSessionTypes.includes(sessionType)) {
+      return res.status(400).json({
+        error: 'Invalid sessionType. Must be FOCUS, BREAK, or RECOVER',
+      });
     }
 
-    // check for active sessions
+    // Create session
     const session = await Session.create({
       userID,
-      taskID,
-      startTime: Date.now(),
+      sessionType,
+      plannedDuration,
     });
 
     res.status(201).json({ message: 'Session started', session });
@@ -34,9 +36,11 @@ export const getSessions = async (req, res) => {
   try {
     const userID = req.userID;
 
-    const sessions = await Session.find({ userID })
-      .sort({ startTime: -1 })
-      .populate('taskID', 'title category');
+    const sessions = await Session.find({ userID }).sort({ startTime: -1 });
+
+    if (!sessions) {
+      return res.status(404).json({ error: 'No sessions started' });
+    }
 
     res
       .status(200)
@@ -52,23 +56,31 @@ export const stopSession = async (req, res) => {
     const userID = req.userID;
     const sessionID = req.params.id;
 
+    const { actualDuration, completed } = req.body;
+
     if (!sessionID) {
-      return res.status(404).json({ error: 'Missing sessionID' });
+      return res.status(400).json({ error: 'Missing sessionID' });
+    }
+
+    if (typeof actualDuration !== 'number' || typeof completed !== 'boolean') {
+      return res
+        .status(400)
+        .json({ error: 'Missing actualDuration and completed' });
     }
 
     const session = await Session.findOne({ _id: sessionID, userID });
 
     if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
+      return res.status(404).json({ error: 'Session not found' });
     }
 
     if (session.completed) {
-      return res.status(400).json({ message: 'Session already completed' });
+      return res.status(400).json({ error: 'Session already completed' });
     }
 
-    session.completed = true;
     session.endTime = Date.now();
-    session.duration = (session.endTime - session.startTime) / 1000 / 60;
+    session.actualDuration = actualDuration;
+    session.completed = completed;
 
     await session.save();
 
@@ -87,7 +99,7 @@ export const getSession = async (req, res) => {
     const sessionID = req.params.id;
 
     if (!sessionID) {
-      return res.status(404).json({ error: 'sessionID required' });
+      return res.status(400).json({ error: 'sessionID required' });
     }
 
     const session = await Session.findOne({ _id: sessionID, userID });

@@ -6,8 +6,8 @@ const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 const verifyAccessToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader)
-    return res.status(401).json({ error: 'Access token missing' });
+  if (!authHeader || !authHeader.startsWith('Bearer '))
+    return res.status(401).json({ error: 'Invalid request' });
 
   const accessToken = authHeader.split(' ')[1];
 

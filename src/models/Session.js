@@ -7,15 +7,21 @@ const sessionSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    taskID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Task',
+    // taskID: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Task',
+    //   required: true,
+    // },
+    sessionType: {
+      type: String,
+      enum: ['FOCUS', 'BREAK', 'RECOVER'],
       required: true,
     },
-    completed: { type: Boolean, default: false },
-    startTime: { type: Date, required: true },
-    endTime: { type: Date },
-    duration: { type: Number, default: 0 },
+    plannedDuration: { type: Number, required: true },
+    actualDuration: { type: Number, default: null },
+    startTime: { type: Date, default: Date.now(), required: true },
+    endTime: { type: Date, default: null },
+    completed: { type: Boolean, default: false }, // True if finished naturally, false if ended early
   },
   { timestamps: true }
 );

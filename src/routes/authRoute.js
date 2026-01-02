@@ -17,6 +17,6 @@ router.post('/reset-password', controller.resetPassword);
 // Protected routes
 router.use(verifyAccessToken);
 router.post('/change-password', controller.changePassword);
-router.post('/delete-account', controller.deleteAccount);
+router.delete('/delete-account', controller.deleteAccount);
 
 export default router;

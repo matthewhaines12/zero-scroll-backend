@@ -12,10 +12,11 @@ export const createTask = async (req, res) => {
     const task = await Task.create({
       userID,
       title: data.title,
-      description: data.description || '',
-      scheduledFor: data.scheduledFor || null,
-      category: data.category || null,
-      tags: data.tags || [],
+      priority: data.priority,
+      // description: data.description || '',
+      // scheduledFor: data.scheduledFor || null,
+      // category: data.category || null,
+      // tags: data.tags || [],
     });
 
     res.status(201).json({ message: 'New task created successfully', task });
@@ -30,7 +31,6 @@ export const getTasks = async (req, res) => {
     const userID = req.userID;
 
     const tasks = await Task.find({ userID }).sort({
-      scheduledFor: 1,
       createdAt: -1,
     });
 
@@ -47,7 +47,7 @@ export const getTask = async (req, res) => {
     const taskID = req.params.id;
 
     if (!taskID) {
-      return res.status(404).json({ error: 'Missing taskID' });
+      return res.status(400).json({ error: 'Missing taskID' });
     }
 
     const task = await Task.findOne({ _id: taskID, userID });
@@ -69,8 +69,9 @@ export const updateTask = async (req, res) => {
     const taskID = req.params.id;
     const updates = req.body;
 
+    // white list completed, priority, and title later **
     if (!taskID) {
-      return res.status(404).json({ error: 'Missing taskID' });
+      return res.status(400).json({ error: 'Missing taskID' });
     }
 
     const updatedTask = await Task.findOneAndUpdate(
@@ -100,7 +101,7 @@ export const deleteTask = async (req, res) => {
     const taskID = req.params.id;
 
     if (!taskID) {
-      return res.status(404).json({ error: 'Missing taskID' });
+      return res.status(400).json({ error: 'Missing taskID' });
     }
 
     const deletedTask = await Task.findOneAndDelete({ _id: taskID, userID });

@@ -1,4 +1,6 @@
 import User from '../models/User.js';
+import Task from '../models/Task.js';
+import Session from '../models/Session.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
@@ -60,7 +62,7 @@ export const signup = async (req, res) => {
       expiresIn: '10m',
     });
 
-    const verifyURL = `${CLIENT_URL}/verify-email?token=${emailToken}`;
+    const verifyURL = `${CLIENT_URL}verify-email?token=${emailToken}`;
 
     await sendEmail({
       to: user.email,
@@ -205,12 +207,12 @@ export const resendVerification = async (req, res) => {
       expiresIn: '10m',
     });
 
-    const verifyURL = `${CLIENT_URL}/verify-email?token=${emailToken}`;
+    const verifyURL = `${CLIENT_URL}verify-email?token=${emailToken}`;
 
     await sendEmail({
       to: user.email,
       subject: 'Verify your Zero Scroll account',
-      html: `<p>Hi ${user.name}, please click the link below to verify your email:</p>
+      html: `<p>Hi ${user.username}, please click the link below to verify your email:</p>
              <a href="${verifyURL}">${verifyURL}</a>`,
     });
 
@@ -254,7 +256,7 @@ export const refresh = async (req, res) => {
     }
 
     const newAccessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: '15m', // for testing
+      expiresIn: '15m',
     });
 
     const newRefreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
@@ -364,6 +366,10 @@ export const changePassword = async (req, res) => {
 
     const user = await User.findById(userID).select('+password');
 
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const isMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!isMatch) {
@@ -399,8 +405,12 @@ export const changePassword = async (req, res) => {
 };
 
 export const deleteAccount = async (req, res) => {
+  // Delete assoicated tasks and sessions data later
   try {
     const userID = req.userID;
+
+    await Task.deleteMany({ userID });
+    await Session.deleteMany({ userID });
     await User.findByIdAndDelete(userID);
 
     res.clearCookie('refreshToken', {

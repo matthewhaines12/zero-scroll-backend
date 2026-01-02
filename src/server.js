@@ -13,14 +13,14 @@ const PORT = 3001;
 
 const corsOptions = {
   origin: `http://localhost:5173`,
-  // credentials: true,
+  credentials: true,
 };
 
 connectDB();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send('Server is running');
