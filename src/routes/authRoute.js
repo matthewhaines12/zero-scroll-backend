@@ -19,4 +19,9 @@ router.use(verifyAccessToken);
 router.post('/change-password', controller.changePassword);
 router.delete('/delete-account', controller.deleteAccount);
 
+// User settings and preferences
+router.get('/settings', controller.getSettings);
+router.patch('/settings/timer', controller.updateTimerSettings);
+router.patch('/settings/preferences', controller.updatePreferences);
+
 export default router;

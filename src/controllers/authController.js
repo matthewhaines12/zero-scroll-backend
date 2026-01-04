@@ -20,6 +20,10 @@ const isValidPassword = (password) => {
   return true;
 };
 
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 export const signup = async (req, res) => {
   try {
     const { email, password, username } = req.body;
@@ -37,7 +41,11 @@ export const signup = async (req, res) => {
       });
     }
 
-    // add is valid email format check
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        error: 'Invalid email form',
+      });
+    }
 
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
 
@@ -405,7 +413,6 @@ export const changePassword = async (req, res) => {
 };
 
 export const deleteAccount = async (req, res) => {
-  // Delete assoicated tasks and sessions data later
   try {
     const userID = req.userID;
 
@@ -420,6 +427,70 @@ export const deleteAccount = async (req, res) => {
     });
 
     res.status(200).json({ message: 'Successful account deletion' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// User Settings and Preferences
+export const getSettings = async (req, res) => {
+  try {
+    const userID = req.userID;
+
+    const user = await User.findById(userID).select(
+      'timerSettings preferences'
+    );
+
+    res.status(200).json({
+      timerSettings: user.timerSettings,
+      preferences: user.preferences,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const updateTimerSettings = async (req, res) => {
+  try {
+    const userID = req.userID;
+    const updates = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userID,
+      { $set: { timerSettings: updates } },
+      { new: true, runValidators: true }
+    ).select('timerSettings');
+
+    res.status(200).json({
+      timerSettings: user.timerSettings,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const updatePreferences = async (req, res) => {
+  try {
+    const userID = req.userID;
+    const updates = req.body;
+
+    const updateObj = {}; // Update partial preferences
+    for (const [key, value] of Object.entries(updates)) {
+      updateObj[`preferences.${key}`] = value;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userID,
+      { $set: updateObj },
+      { new: true, runValidators: true }
+    ).select('preferences');
+
+    res.status(200).json({
+      preferences: user.preferences,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
