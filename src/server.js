@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoute from './routes/authRoute.js';
 import taskRoute from './routes/taskRoute.js';
 import sessionRoute from './routes/sessionRoute.js';
+import analyticRoute from './routes/analyticRoute.js';
 import dotenv from 'dotenv';
 dotenv.config();
 const app = express();
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoute);
 app.use('/api/tasks', taskRoute);
 app.use('/api/sessions', sessionRoute);
+app.use('/api/analytics', analyticRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

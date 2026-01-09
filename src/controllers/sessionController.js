@@ -56,16 +56,20 @@ export const stopSession = async (req, res) => {
     const userID = req.userID;
     const sessionID = req.params.id;
 
-    const { actualDuration, completed } = req.body;
+    const { actualDuration, completed, countsTowardStats } = req.body;
 
     if (!sessionID) {
       return res.status(400).json({ error: 'Missing sessionID' });
     }
 
-    if (typeof actualDuration !== 'number' || typeof completed !== 'boolean') {
-      return res
-        .status(400)
-        .json({ error: 'Missing actualDuration and completed' });
+    if (
+      actualDuration === undefined ||
+      completed === undefined ||
+      countsTowardStats === undefined
+    ) {
+      return res.status(400).json({
+        error: 'Missing actualDuration, completed, and countsTowardStats',
+      });
     }
 
     const session = await Session.findOne({ _id: sessionID, userID });
@@ -81,6 +85,7 @@ export const stopSession = async (req, res) => {
     session.endTime = Date.now();
     session.actualDuration = actualDuration;
     session.completed = completed;
+    session.countsTowardStats = countsTowardStats;
 
     await session.save();
 
@@ -143,20 +148,27 @@ export const getTodaysSessions = async (req, res) => {
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
+
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    const todaysSessions = await Session.find({
+    const sessions = await Session.find({
       userID,
-      completed: true,
-      endTime: { $gte: start, $lte: end },
-    }).sort({
-      startTime: 1, // earliest first
-    });
+      countsTowardStats: true,
+      startTime: { $lte: end },
+      endTime: { $gte: start },
+    }).sort({ startTime: 1 });
+
+    const totalFocusSessions = sessions.length;
+
+    let totalDeepWorkMins = 0;
+    for (const session of sessions) {
+      totalDeepWorkMins += session.actualDuration || 0;
+    }
 
     res.status(200).json({
-      message: "Today's sessions returned successfully",
-      todaysSessions,
+      totalFocusSessions,
+      totalDeepWorkMins,
     });
   } catch (err) {
     console.error(err);
