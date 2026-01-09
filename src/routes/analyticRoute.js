@@ -7,6 +7,7 @@ const router = express.Router();
 // Protected routes
 router.use(verifyAccessToken);
 
-router.get('/focus-consistency/:days', controller.focusConsistency);
+router.get('/focus-days/:days', controller.getFocusConsistency);
+router.get('/focus-hours/:days', controller.getFocusHours);
 
 export default router;
