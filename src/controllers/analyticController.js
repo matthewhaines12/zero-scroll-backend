@@ -163,3 +163,76 @@ export const getFocusHours = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+export const getSessionOutcomes = async (req, res) => {
+  try {
+    const userID = req.userID;
+    const days = parseInt(req.params.days);
+
+    const startDate = new Date();
+    startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
+    startDate.setUTCHours(0, 0, 0, 0); // Start date at UTC midnight x days ago
+
+    // Completed -> completed === true
+    // Ended Early -> completed === false AND countsTowardStats === true
+    // Discarded -> countsTowardStats === false
+    const results = await Session.aggregate([
+      {
+        $match: { userID, startTime: { $gte: startDate } },
+      },
+      {
+        $addFields: {
+          outcomes: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      { $eq: ['$completed', true] },
+                      { $eq: ['$countsTowardStats', true] },
+                    ],
+                  },
+                  then: 'Completed',
+                },
+                {
+                  case: {
+                    $and: [
+                      { $eq: ['$completed', false] },
+                      { $eq: ['$countsTowardStats', true] },
+                    ],
+                  },
+                  then: 'Ended Early',
+                },
+                {
+                  case: { $eq: ['$countsTowardStats', false] },
+                  then: 'Discarded',
+                },
+              ],
+              default: 'Discarded',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$outcomes',
+          value: { $sum: 1 }, // count sessions
+        },
+      },
+    ]);
+
+    const allOutcomes = ['Completed', 'Ended Early', 'Discarded'];
+
+    const countsOutcomes = new Map(results.map((r) => [r._id, r.value]));
+
+    const response = allOutcomes.map((outcome) => ({
+      name: outcome,
+      value: countsOutcomes.get(outcome) || 0,
+    }));
+
+    return res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};

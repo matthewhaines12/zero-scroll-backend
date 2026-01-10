@@ -9,5 +9,6 @@ router.use(verifyAccessToken);
 
 router.get('/focus-days/:days', controller.getFocusConsistency);
 router.get('/focus-hours/:days', controller.getFocusHours);
+router.get('/session-outcomes/:days', controller.getSessionOutcomes);
 
 export default router;
