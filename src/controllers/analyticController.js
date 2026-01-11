@@ -1,4 +1,5 @@
 import Session from '../models/Session.js';
+import Task from '../models/Task.js';
 
 export const getFocusConsistency = async (req, res) => {
   try {
@@ -6,8 +7,8 @@ export const getFocusConsistency = async (req, res) => {
     const days = parseInt(req.params.days);
 
     const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
-    startDate.setUTCHours(0, 0, 0, 0); // Start date at UTC midnight x days ago
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
 
     const results = await Session.aggregate([
       {
@@ -23,7 +24,7 @@ export const getFocusConsistency = async (req, res) => {
             $dateToString: {
               format: '%Y-%m-%d',
               date: '$startTime',
-              timezone: 'UTC',
+              timezone: 'America/New_York',
             },
           },
           minutes: { $sum: `$actualDuration` },
@@ -40,9 +41,9 @@ export const getFocusConsistency = async (req, res) => {
     const response = [];
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);
-      date.setUTCDate(startDate.getUTCDate() + i);
+      date.setDate(startDate.getDate() + i);
 
-      const key = date.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+      const key = date.toISOString().split('T')[0];
       response.push({ date: key, minutes: minutesByDate.get(key) || 0 });
     }
 
@@ -59,8 +60,8 @@ export const getFocusHours = async (req, res) => {
     const days = parseInt(req.params.days);
 
     const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
-    startDate.setUTCHours(0, 0, 0, 0); // Start date at UTC midnight x days ago
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
 
     const results = await Session.aggregate([
       {
@@ -72,7 +73,7 @@ export const getFocusHours = async (req, res) => {
       },
       {
         $addFields: {
-          hour: { $hour: '$startTime' },
+          hour: { $hour: { date: '$startTime', timezone: 'America/New_York' } },
         },
       },
       {
@@ -170,8 +171,8 @@ export const getSessionOutcomes = async (req, res) => {
     const days = parseInt(req.params.days);
 
     const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
-    startDate.setUTCHours(0, 0, 0, 0); // Start date at UTC midnight x days ago
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
 
     // Completed -> completed === true
     // Ended Early -> completed === false AND countsTowardStats === true
@@ -231,6 +232,88 @@ export const getSessionOutcomes = async (req, res) => {
     }));
 
     return res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const getUserStats = async (req, res) => {
+  try {
+    const userID = req.userID;
+
+    // 1. Total sessions (all completed sessions that count toward stats)
+    const totalSessions = await Session.countDocuments({
+      userID,
+      countsTowardStats: true,
+    });
+
+    // 2. Total focus time (sum of all actualDuration from sessions that count)
+    const focusTimeResult = await Session.aggregate([
+      {
+        $match: {
+          userID,
+          countsTowardStats: true,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalMinutes: { $sum: '$actualDuration' },
+        },
+      },
+    ]);
+    const totalFocusTime =
+      focusTimeResult.length > 0 ? focusTimeResult[0].totalMinutes : 0;
+
+    // 3. Tasks completed
+    const tasksCompleted = await Task.countDocuments({
+      userID,
+      completed: true,
+    });
+
+    // 4. Current streak (consecutive days with at least one session)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let currentStreak = 0;
+    let checkDate = new Date(today);
+
+    while (true) {
+      const dayStart = new Date(checkDate);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const dayEnd = new Date(checkDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const sessionsOnDay = await Session.countDocuments({
+        userID,
+        countsTowardStats: true,
+        startTime: { $gte: dayStart, $lte: dayEnd },
+      });
+
+      if (sessionsOnDay > 0) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        // If today has no sessions, streak is 0
+        // Otherwise, we've found the end of the streak
+        if (currentStreak === 0 && checkDate.getTime() === today.getTime()) {
+          break;
+        } else if (checkDate.getTime() < today.getTime()) {
+          break;
+        } else {
+          break;
+        }
+      }
+    }
+
+    res.status(200).json({
+      totalSessions,
+      totalFocusTime,
+      tasksCompleted,
+      currentStreak,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

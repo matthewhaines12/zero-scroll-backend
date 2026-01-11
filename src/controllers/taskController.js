@@ -126,17 +126,18 @@ export const getTodaysTasks = async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    const todaysTasks = await Task.find({
+    const todaysTasksCount = await Task.countDocuments({
       userID,
-      completed: false,
-      scheduledFor: { $gte: start, $lte: end },
-    }).sort({
-      scheduledFor: 1, // earliest first
+      completed: true,
+      updatedAt: { $gte: start, $lte: end },
     });
 
     res
       .status(200)
-      .json({ message: "Today's tasks returned successfully", todaysTasks });
+      .json({
+        message: "Today's tasks count returned successfully",
+        count: todaysTasksCount,
+      });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
