@@ -18,7 +18,7 @@ const verifyAccessToken = async (req, res, next) => {
   try {
     decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
   } catch (err) {
-    return res.status(403).json({ error: 'Invalid access token' });
+    return res.status(401).json({ error: 'Invalid access token' });
   }
 
   try {
