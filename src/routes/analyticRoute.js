@@ -7,6 +7,7 @@ const router = express.Router();
 // Protected routes
 router.use(verifyAccessToken);
 
+router.get('/user-stats', controller.getUserStats);
 router.get('/focus-days/:days', controller.getFocusConsistency);
 router.get('/focus-hours/:days', controller.getFocusHours);
 router.get('/session-outcomes/:days', controller.getSessionOutcomes);
