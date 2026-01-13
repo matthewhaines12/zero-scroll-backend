@@ -1,5 +1,4 @@
 import Session from '../models/Session.js';
-import Task from '../models/Task.js';
 
 export const startSession = async (req, res) => {
   try {
@@ -175,33 +174,3 @@ export const getTodaysSessions = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
-
-// export const getSessionsForTasks = async (req, res) => {
-//   try {
-//     const userID = req.userID;
-//     const taskID = req.params.id;
-
-//     if (!taskID) {
-//       return res.status(404).json({ error: 'taskID required' });
-//     }
-
-//     const task = await Task.findOne({ _id: taskID, userID });
-
-//     if (!task) {
-//       return res.status(404).json({ error: 'Task not found' });
-//     }
-
-//     const sessionsForTask = await Session.find({
-//       userID,
-//       taskID,
-//     }).sort({ startTime: -1 });
-
-//     res.status(200).json({
-//       message: 'Sessions for task returned successfully',
-//       sessionsForTask,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: 'Server error' });
-//   }
-// };

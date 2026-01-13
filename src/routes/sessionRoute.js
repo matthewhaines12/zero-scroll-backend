@@ -12,6 +12,5 @@ router.get('/today', controller.getTodaysSessions);
 router.get('/:id', controller.getSession);
 router.patch('/:id', controller.stopSession);
 router.delete('/:id', controller.deleteSession);
-// router.get('/task/:id', controller.getSessionsForTasks);
 
 export default router;
