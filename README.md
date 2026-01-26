@@ -23,6 +23,9 @@ Sends verification emails on signup and supports resending if needed. Also handl
 **User Preferences**  
 Stores custom timer settings (focus/break/recover durations) and preferences like auto-start timer, sound effects, and daily session goals.
 
+**Rate Limiting**  
+Protects authentication endpoints from brute force attacks. Login is limited to 5 attempts per 15 minutes, signup to 3 attempts per hour (per IP address).
+
 ## Tech Stack
 
 - Node.js with Express
