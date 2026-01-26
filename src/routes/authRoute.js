@@ -1,12 +1,13 @@
 import express from 'express';
 import verifyAccessToken from '../middleware/verifyAccessToken.js';
 import * as controller from '../controllers/authController.js';
+import { loginLimiter, signupLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // Public routes
-router.post('/signup', controller.signup);
-router.post('/login', controller.login);
+router.post('/signup', signupLimiter, controller.signup);
+router.post('/login', loginLimiter, controller.login);
 router.post('/logout', controller.logout);
 router.get('/verify-email', controller.verifyEmail);
 router.post('/resend-verification', controller.resendVerification);
