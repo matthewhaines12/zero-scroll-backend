@@ -21,14 +21,6 @@ export function signResetToken(payload) {
   return jwt.sign(payload, JWT_RESET_SECRET, { expiresIn: '10m' });
 }
 
-export function verifyAccessToken(accessToken) {
-  try {
-    return jwt.verify(accessToken, JWT_ACCESS_SECRET);
-  } catch (err) {
-    throw new Error('Invalid or expired access token');
-  }
-}
-
 export function verifyRefreshToken(refreshToken) {
   try {
     return jwt.verify(refreshToken, JWT_REFRESH_SECRET);
