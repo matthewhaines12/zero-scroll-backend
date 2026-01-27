@@ -2,27 +2,11 @@ import User from '../models/User.js';
 import Task from '../models/Task.js';
 import Session from '../models/Session.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
+import { isValidPassword, isValidEmail } from '../utils/validation.js';
+import * as jwt from '../utils/tokens.js';
 
 const CLIENT_URL = process.env.CLIENT_URL;
-const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
-const JWT_EMAIL_SECRET = process.env.EMAIL_TOKEN_SECRET;
-const JWT_RESET_SECRET = process.env.RESET_TOKEN_SECRET;
-
-const isValidPassword = (password) => {
-  if (password.length < 10) return false;
-  if (!/[a-z]/.test(password)) return false;
-  if (!/[A-Z]/.test(password)) return false;
-  if (!/[0-9]/.test(password)) return false;
-  if (!/[^a-zA-Z0-9]/.test(password)) return false;
-  return true;
-};
-
-const isValidEmail = (email) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
 
 export const signup = async (req, res) => {
   try {
@@ -66,9 +50,7 @@ export const signup = async (req, res) => {
       password: hashedPassword,
     });
 
-    const emailToken = jwt.sign({ userID: user._id }, JWT_EMAIL_SECRET, {
-      expiresIn: '10m',
-    });
+    const emailToken = jwt.signEmailToken({ userID: user._id });
 
     const verifyURL = `${CLIENT_URL}verify-email?token=${emailToken}`;
 
@@ -117,21 +99,16 @@ export const login = async (req, res) => {
         .json({ error: 'Please verify your email before logging in' });
     }
 
-    const accessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: '15m',
-    });
-
-    const refreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
-      expiresIn: '30d',
-    });
+    const accessToken = jwt.signAccessToken({ userID: user._id });
+    const refreshToken = jwt.signRefreshToken({ userID: user._id });
 
     const userObj = user.toObject();
     delete userObj.password;
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
@@ -146,8 +123,8 @@ export const logout = (req, res) => {
   try {
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'none',
     });
     res.status(200).json({ message: 'Successful logout' });
   } catch (err) {
@@ -167,17 +144,15 @@ export const verifyEmail = async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(emailToken, JWT_EMAIL_SECRET);
+      decoded = jwt.verifyEmailToken(emailToken);
     } catch (err) {
-      return res
-        .status(401)
-        .json({ error: 'Invalid or expired email verification token' });
+      return res.status(401).json({ error: err.message });
     }
 
     const user = await User.findByIdAndUpdate(
       decoded.userID,
       { verified: true },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
@@ -211,9 +186,7 @@ export const resendVerification = async (req, res) => {
       return res.status(400).json({ error: 'Email is already verified' });
     }
 
-    const emailToken = jwt.sign({ userID: user._id }, JWT_EMAIL_SECRET, {
-      expiresIn: '10m',
-    });
+    const emailToken = jwt.signEmailToken({ userID: user._id });
 
     const verifyURL = `${CLIENT_URL}verify-email?token=${emailToken}`;
 
@@ -241,11 +214,9 @@ export const refresh = async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+      decoded = jwt.verifyRefreshToken(refreshToken);
     } catch (err) {
-      return res
-        .status(401)
-        .json({ error: 'Invalid or expired refresh token' });
+      return res.status(401).json({ error: err.message });
     }
 
     const user = await User.findById(decoded.userID);
@@ -257,24 +228,19 @@ export const refresh = async (req, res) => {
     if (!user.verified) {
       res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: false,
-        sameSite: 'Lax',
+        secure: true,
+        sameSite: 'none',
       });
       return res.status(403).json({ error: 'Email verification required' });
     }
 
-    const newAccessToken = jwt.sign({ userID: user._id }, JWT_ACCESS_SECRET, {
-      expiresIn: '15m',
-    });
-
-    const newRefreshToken = jwt.sign({ userID: user._id }, JWT_REFRESH_SECRET, {
-      expiresIn: '30d',
-    });
+    const newAccessToken = jwt.signAccessToken({ userID: user._id });
+    const newRefreshToken = jwt.signRefreshToken({ userID: user._id });
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
@@ -302,9 +268,7 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const resetToken = jwt.sign({ userID: user._id }, JWT_RESET_SECRET, {
-      expiresIn: '10m',
-    });
+    const resetToken = jwt.signResetToken({ userID: user._id });
 
     const resetURL = `${CLIENT_URL}/reset-password?token=${resetToken}`;
 
@@ -343,9 +307,9 @@ export const resetPassword = async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_RESET_SECRET);
+      decoded = jwt.verifyResetToken(token);
     } catch (err) {
-      return res.status(401).json({ error: 'Invalid or expired reset token' });
+      return res.status(401).json({ error: err.message });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 11);
@@ -353,7 +317,7 @@ export const resetPassword = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       decoded.userID,
       { password: hashedPassword },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
@@ -396,13 +360,13 @@ export const changePassword = async (req, res) => {
     await User.findByIdAndUpdate(
       userID,
       { password: hashedPassword },
-      { new: true }
+      { new: true },
     );
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'none',
     });
 
     res.status(200).json({ message: 'Successful password change' });
@@ -422,8 +386,8 @@ export const deleteAccount = async (req, res) => {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'none',
     });
 
     res.status(200).json({ message: 'Successful account deletion' });
@@ -439,7 +403,7 @@ export const getSettings = async (req, res) => {
     const userID = req.userID;
 
     const user = await User.findById(userID).select(
-      'timerSettings preferences'
+      'timerSettings preferences',
     );
 
     res.status(200).json({
@@ -460,7 +424,7 @@ export const updateTimerSettings = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userID,
       { $set: { timerSettings: updates } },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select('timerSettings');
 
     res.status(200).json({
@@ -485,7 +449,7 @@ export const updatePreferences = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userID,
       { $set: updateObj },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select('preferences');
 
     res.status(200).json({

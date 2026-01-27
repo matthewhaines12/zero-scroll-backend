@@ -1,8 +1,6 @@
 // Protect private routes - only accessible by authenticated users
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-
-const JWT_ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
+import { verifyAccessToken } from '../utils/tokens.js';
 
 const verifyAccessToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -16,7 +14,7 @@ const verifyAccessToken = async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(accessToken, JWT_ACCESS_SECRET);
+    decoded = verifyAccessToken(accessToken);
   } catch (err) {
     return res.status(401).json({ error: 'Invalid access token' });
   }
